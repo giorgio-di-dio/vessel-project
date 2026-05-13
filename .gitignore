@@ -1,0 +1,10 @@
+# Ambiente virtuale
+venv/
+env/
+
+# Dataset (quello da 2GB!)
+data/
+
+# Python cache
+__pycache__/
+*.py[cod]

@@ -1,0 +1,16 @@
+# Deep Learning Core
+torch
+torchvision
+
+# Architetture già pronte (fondamentale per U-Net)
+segmentation-models-pytorch
+
+# Utility per Dataset e Immagini
+kagglehub
+opencv-python
+matplotlib
+pandas
+numpy
+
+# Opzionale: per monitorare l'addestramento
+tqdm
