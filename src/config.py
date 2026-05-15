@@ -36,14 +36,16 @@ RESULTS_DIR = OUTPUT_DIR / "results"
 # ==============================================================================
 # Dimensioni dell'immagine di input per la CNN (es. U-Net)
 # Immagini di dimensioni standard come 256x256 o 512x512 sono ideali per la segmentazione
-IMAGE_HEIGHT = 256
-IMAGE_WIDTH = 256
+IMAGE_HEIGHT = 2048
+IMAGE_WIDTH = 2048
 CHANNELS = 3  # RGB
 
 # Iperparametri di training
+PATCH_SIZE = 512       # Patch size per il training (deve essere multiplo di 32)
 BATCH_SIZE = 8
 EPOCHS = 50
 LEARNING_RATE = 1e-4
+NUM_WORKERS = 0        # 0 = sincrono (più stabile su Windows; aumentare su Linux/Mac)
 
 # Configurazione del seed per la riproducibilità
 RANDOM_SEED = 42
