@@ -1,5 +1,5 @@
 # Ambiente virtuale
-venv/
+.venv/
 env/
 
 # Dataset (quello da 2GB!)
