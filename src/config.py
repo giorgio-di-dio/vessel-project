@@ -59,7 +59,7 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 # ==============================================================================
 # 4. IMPOSTAZIONI DEL MODELLO E CHECKPOINT
 # ==============================================================================
-# Percorso in cui salvare i pesi del modello con le performance migliori
+# ?? Percorso in cui salvare i pesi del modello con le performance migliori
 BEST_MODEL_PATH = MODELS_DIR / "best_unet_vessel.pth"
 
 # Soglia di confidenza per binarizzare le probabilità della maschera predetta
@@ -81,12 +81,12 @@ def create_directories():
         print(f"[Config] Verificata/Creata directory: {d}")
 
 if __name__ == "__main__":
-    # Test di verifica rapida della configurazione
+    # ?? Test di verifica rapida della configurazione
     print("=== VESSEL SEGMENTATION CONFIGURATION ===")
     print(f"Base Directory: {BASE_DIR}")
     print(f"Hardware Device: {DEVICE.upper()}")
     create_directories()
     
-    # Verifica e ottieni il path di Kagglehub
+    # ?? Verifica e ottieni il path di Kagglehub
     dataset_path = get_kaggle_dataset_path()
     print(f"Path to dataset files: {dataset_path}")
