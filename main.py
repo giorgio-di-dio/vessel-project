@@ -83,7 +83,7 @@ def main():
 
     # Scheduler: riduce il LR se la val_loss non migliora per 5 epoche
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer, mode="min", patience=5, factor=0.5, verbose=True
+        optimizer, mode="min", patience=5, factor=0.5
     )
 
     # GradScaler per AMP (solo su GPU; su CPU viene ignorato in engine.py)
