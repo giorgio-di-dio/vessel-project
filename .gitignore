@@ -8,3 +8,11 @@ data/
 # Python cache
 __pycache__/
 *.py[cod]
+
+#non caricare i pesi dei modelli perché sono molto pesanti per il repo
+*.pth
+output/models/
+
+#non caricare i file di sistema di mac os
+**/.DS_Store
+
