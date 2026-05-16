@@ -80,7 +80,7 @@ def main():
     )
 
     # --- Modello, Loss, Ottimizzatore ---
-    model   = UNet(in_channels=3, out_channels=1, features=[16, 32, 64, 128]).to(DEVICE)
+    model   = UNet(in_channels=3, out_channels=1).to(DEVICE) # features=[16, 32, 64, 128] con rete "piccola"
     loss_fn = CombinedLoss(alpha=0.5)
     optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
 

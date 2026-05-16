@@ -41,7 +41,7 @@ IMAGE_WIDTH = 2048
 CHANNELS = 3  # RGB
 
 # Iperparametri di training
-PATCH_SIZE = 256       # Patch size per il training (deve essere multiplo di 32)
+PATCH_SIZE = 512       # Patch size per il training (deve essere multiplo di 32) (256 con rete "piccola")
 BATCH_SIZE = 8
 EPOCHS = 50
 LEARNING_RATE = 1e-4
