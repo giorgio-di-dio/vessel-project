@@ -14,6 +14,7 @@ Il modello con il miglior Dice Score di validazione viene salvato in:
 """
 
 import random
+import time
 import numpy as np
 import torch
 from torch import optim
@@ -27,6 +28,7 @@ from src.config import (
     NUM_WORKERS,
     RANDOM_SEED,
     BEST_MODEL_PATH,
+    OUTPUT_DIR,
     create_directories,
     get_kaggle_dataset_path,
 )
@@ -34,6 +36,7 @@ from src.dataset import get_dataloaders
 from src.models.unet import UNet
 from src.losses import CombinedLoss
 from src.engine import train_one_epoch, validate, save_checkpoint
+from src.logger import RunLogger
 
 
 # ==============================================================================
@@ -89,35 +92,69 @@ def main():
     # GradScaler per AMP (solo su GPU; su CPU viene ignorato in engine.py)
     scaler = torch.cuda.amp.GradScaler() if DEVICE == "cuda" else None
 
+    # --- Logger ---
+    logger = RunLogger(
+        log_dir=OUTPUT_DIR / "logs",
+        hparams={
+            "patch_size":         PATCH_SIZE,
+            "batch_size":         BATCH_SIZE,
+            "epochs":             EPOCHS,
+            "learning_rate":      LEARNING_RATE,
+            "num_workers":        NUM_WORKERS,
+            "device":             DEVICE,
+            "random_seed":        RANDOM_SEED,
+            "unet_features":      [16, 32, 64, 128],
+            "loss_alpha":         0.5,
+            "scheduler_patience": 5,
+            "scheduler_factor":   0.5,
+        },
+    )
+    logger.start()
+
     print(f"\n  Parametri U-Net: {model.count_parameters():,}\n")
 
     # --- Loop di Training ---
-    best_val_dice = 0.0
+    best_val_dice  = 0.0
+    best_val_epoch = 1
 
     for epoch in range(1, EPOCHS + 1):
         print(f"Epoch [{epoch:>3}/{EPOCHS}]")
 
-        train_loss, train_dice, train_iou = train_one_epoch(
+        epoch_start = time.perf_counter()
+
+        train_loss, train_dice, train_iou, batch_times = train_one_epoch(
             model, train_loader, optimizer, loss_fn, DEVICE, scaler
         )
         val_loss, val_dice, val_iou = validate(
             model, val_loader, loss_fn, DEVICE
         )
 
+        epoch_time = time.perf_counter() - epoch_start
+
         scheduler.step(val_loss)
 
-        # Logging
+        # Logging a console
         print(
             f"  Train -> Loss: {train_loss:.4f} | Dice: {train_dice:.4f} | IoU: {train_iou:.4f}\n"
             f"  Val   -> Loss: {val_loss:.4f}   | Dice: {val_dice:.4f}   | IoU: {val_iou:.4f}"
         )
 
+        # Logging su file
+        logger.log_epoch(
+            epoch, train_loss, train_dice, train_iou,
+            val_loss, val_dice, val_iou,
+            epoch_time, batch_times,
+        )
+
         # Salvataggio del miglior modello
         if val_dice > best_val_dice:
-            best_val_dice = val_dice
+            best_val_dice  = val_dice
+            best_val_epoch = epoch
             save_checkpoint(model, BEST_MODEL_PATH, epoch, val_dice)
 
         print()
+
+    logger.finish(best_val_dice, best_val_epoch)
 
     print("=" * 60)
     print(f"  Training completato. Miglior Dice Val: {best_val_dice:.4f}")
