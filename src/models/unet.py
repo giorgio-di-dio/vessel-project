@@ -162,6 +162,9 @@ class UNet(nn.Module):
     ):
         super().__init__()
 
+        # Salva la configurazione architetturale come attributo dell'istanza
+        # (usato da save_checkpoint per garantire la compatibilità al caricamento)
+        self.features = list(features)
         # --- ENCODER ---
         self.input_conv = DoubleConv(in_channels, features[0])
         self.enc1 = EncoderBlock(features[0], features[1])

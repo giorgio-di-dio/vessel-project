@@ -156,6 +156,7 @@ def save_checkpoint(model: nn.Module, path: Path, epoch: int, val_dice: float) -
         - 'state_dict': Pesi del modello.
         - 'epoch'     : Epoch in cui è avvenuto il salvataggio.
         - 'val_dice'  : Dice Score di validazione che ha motivato il salvataggio.
+        - 'features'  : Lista dei canali per ogni stadio encoder (architettura).
 
     Args:
         model    : Il modello U-Net da salvare.
@@ -165,11 +166,17 @@ def save_checkpoint(model: nn.Module, path: Path, epoch: int, val_dice: float) -
     """
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Salva la configurazione dell'architettura per garantire la compatibilità
+    # al momento del caricamento (evita size mismatch se features cambia).
+    features = getattr(model, "features", None)
+
     torch.save(
         {
             "epoch": epoch,
             "val_dice": val_dice,
             "state_dict": model.state_dict(),
+            "features": features,
         },
         path,
     )
@@ -180,16 +187,32 @@ def load_checkpoint(model: nn.Module, path: Path, device: str = DEVICE) -> dict:
     """
     Carica i pesi da un checkpoint .pth nel modello.
 
+    Se il checkpoint contiene la chiave 'features', verifica che corrisponda
+    all'architettura del modello passato. In caso di discrepanza emette un avviso
+    ma prosegue con strict=False (carica solo i layer compatibili).
+
     Args:
         model  : Istanza del modello (stessa architettura usata durante il saving).
         path   : Path al file .pth.
         device : Device su cui mappare i tensori.
 
     Returns:
-        Il dizionario del checkpoint (con 'epoch' e 'val_dice').
+        Il dizionario del checkpoint (con 'epoch', 'val_dice' e opzionalmente 'features').
     """
-    checkpoint = torch.load(path, map_location=device)
-    model.load_state_dict(checkpoint["state_dict"])
+    checkpoint = torch.load(path, map_location=device, weights_only=False)
+    model_features = getattr(model, "features", None)
+    ckpt_features  = checkpoint.get("features", None)
+
+    if ckpt_features is not None and model_features is not None and ckpt_features != model_features:
+        print(
+            f"  [ATTENZIONE] Mismatch architettura: "
+            f"checkpoint features={ckpt_features}, modello features={model_features}. "
+            "Caricamento con strict=False."
+        )
+        model.load_state_dict(checkpoint["state_dict"], strict=False)
+    else:
+        model.load_state_dict(checkpoint["state_dict"])
+
     print(
         f"  [Checkpoint] Caricato: {Path(path).name} "
         f"(epoch={checkpoint['epoch']}, val_dice={checkpoint['val_dice']:.4f})"
