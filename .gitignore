@@ -16,7 +16,7 @@ __pycache__/
 output/results/
 
 #non caricare i file di sistema di mac os
-.DS_Store
 **/.DS_Store
+
 output/results/quick_test_67_D.png
 output/results/quick_test_116_G.png
