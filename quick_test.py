@@ -202,7 +202,7 @@ def main(n: int, stride: int = PATCH_SIZE // 2):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Quick test visivo del modello U-Net.")
-    parser.add_argument("--n",      type=int, default=1,              help="Numero di immagini casuali da testare (default: 1)")
+    parser.add_argument("--n",      type=int, default=3,              help="Numero di immagini casuali da testare (default: 1)")
     parser.add_argument("--stride", type=int, default=PATCH_SIZE // 2,
                         help=f"Stride per sliding window (default: {PATCH_SIZE // 2} = patch_size/2, overlap 50%%). "
                              f"Deve essere ≤ patch_size ({PATCH_SIZE}) per evitare gap non coperti.")
