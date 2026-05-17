@@ -46,7 +46,7 @@ BATCH_SIZE = 8
 EPOCHS = 50
 LEARNING_RATE = 1e-4
 NUM_WORKERS = 2        # 0 = sincrono (più stabile su Windows; aumentare su Linux/Mac)
-UNET_FEATURES = [[64, 128, 256, 512]]  # features=[16, 32, 64, 128] con rete "piccola"
+UNET_FEATURES = [64, 128, 256, 512]  # features=[16, 32, 64, 128] con rete "piccola"
 # Configurazione del seed per la riproducibilità
 RANDOM_SEED = 43
 
