@@ -74,7 +74,12 @@ class RunLogger:
 
     def start(self) -> None:
         """Registra l'ora di inizio e crea i file di output (con header CSV)."""
-        self._start_dt = datetime.now()
+        try:
+            from zoneinfo import ZoneInfo
+            self._start_dt = datetime.now(tz=ZoneInfo('Europe/Rome'))
+        except ImportError:
+            self._start_dt = datetime.now()
+
         self.run_id    = self._start_dt.strftime("%Y%m%d_%H%M")
 
         self._log_dir.mkdir(parents=True, exist_ok=True)
@@ -142,7 +147,12 @@ class RunLogger:
             best_val_dice : Miglior Dice Score di validazione raggiunto.
             best_epoch    : Epoch in cui è stato raggiunto il miglior Dice.
         """
-        self._end_dt = datetime.now()
+        try:
+            from zoneinfo import ZoneInfo
+            self._end_dt = datetime.now(tz=ZoneInfo('Europe/Rome'))
+        except ImportError:
+            self._end_dt = datetime.now()
+            
         duration = self._end_dt - self._start_dt
         total_seconds = int(duration.total_seconds())
         h, rem = divmod(total_seconds, 3600)
