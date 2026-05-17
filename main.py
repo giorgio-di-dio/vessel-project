@@ -29,6 +29,7 @@ from src.config import (
     RANDOM_SEED,
     BEST_MODEL_PATH,
     OUTPUT_DIR,
+    UNET_FEATURES,
     create_directories,
     get_kaggle_dataset_path,
 )
@@ -80,7 +81,7 @@ def main():
     )
 
     # --- Modello, Loss, Ottimizzatore ---
-    model   = UNet(in_channels=3, out_channels=1).to(DEVICE) # features=[16, 32, 64, 128] con rete "piccola"
+    model   = UNet(in_channels=3, out_channels=1, features=UNET_FEATURES).to(DEVICE)
     loss_fn = CombinedLoss(alpha=0.5)
     optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
@@ -103,7 +104,7 @@ def main():
             "num_workers":        NUM_WORKERS,
             "device":             DEVICE,
             "random_seed":        RANDOM_SEED,
-            "unet_features":      [16, 32, 64, 128],
+            "unet_features":      UNET_FEATURES,
             "loss_alpha":         0.5,
             "scheduler_patience": 5,
             "scheduler_factor":   0.5,

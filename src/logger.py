@@ -4,8 +4,8 @@ src/logger.py
 Sistema di logging per il training run della segmentazione dei vasi sanguigni.
 
 Genera due file di output per ogni run:
-    - run_YYYYMMDD_HHMMSS.log         : Riepilogo con timing, iperparametri e statistiche batch.
-    - run_YYYYMMDD_HHMMSS_epochs.csv  : Tabella epoch-per-epoch con le metriche (per i plot).
+    - run_YYYYMMDD_HHMM.log         : Riepilogo con timing, iperparametri e statistiche batch.
+    - run_YYYYMMDD_HHMM_epochs.csv  : Tabella epoch-per-epoch con le metriche (per i plot).
 
 Uso tipico in main.py:
     logger = RunLogger(log_dir=OUTPUT_DIR / "logs", hparams={...})
@@ -75,7 +75,7 @@ class RunLogger:
     def start(self) -> None:
         """Registra l'ora di inizio e crea i file di output (con header CSV)."""
         self._start_dt = datetime.now()
-        self.run_id    = self._start_dt.strftime("%Y%m%d_%H%M%S")
+        self.run_id    = self._start_dt.strftime("%Y%m%d_%H%M")
 
         self._log_dir.mkdir(parents=True, exist_ok=True)
         self.log_path = self._log_dir / f"run_{self.run_id}.log"
@@ -207,6 +207,7 @@ class RunLogger:
             f"  Scheduler       : ReduceLROnPlateau "
             f"(patience={hp.get('scheduler_patience', 'N/A')}, "
             f"factor={hp.get('scheduler_factor', 'N/A')})",
+            f"random seed     : {hp.get('random_seed', 'N/A')}",
             "",
             DASH,
             "  BATCH TIMING (train, media su tutte le epoch)",

@@ -45,10 +45,10 @@ PATCH_SIZE = 512       # Patch size per il training (deve essere multiplo di 32)
 BATCH_SIZE = 8
 EPOCHS = 50
 LEARNING_RATE = 1e-4
-NUM_WORKERS = 0        # 0 = sincrono (più stabile su Windows; aumentare su Linux/Mac)
-
+NUM_WORKERS = 2        # 0 = sincrono (più stabile su Windows; aumentare su Linux/Mac)
+UNET_FEATURES = [[64, 128, 256, 512]]  # features=[16, 32, 64, 128] con rete "piccola"
 # Configurazione del seed per la riproducibilità
-RANDOM_SEED = 42
+RANDOM_SEED = 43
 
 # ==============================================================================
 # 3. CONFIGURAZIONE HARDWARE (DEVICE)
