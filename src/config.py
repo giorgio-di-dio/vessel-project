@@ -41,12 +41,12 @@ IMAGE_WIDTH = 2048
 CHANNELS = 3  # RGB
 
 # Iperparametri di training
-PATCH_SIZE = 512       # Patch size per il training (deve essere multiplo di 32) (256 con rete "piccola")
+PATCH_SIZE = 256       # Patch size per il training (deve essere multiplo di 32) (256 con rete "piccola")
 BATCH_SIZE = 8
 EPOCHS = 50
 LEARNING_RATE = 1e-4
 NUM_WORKERS = 2        # 0 = sincrono (più stabile su Windows; aumentare su Linux/Mac)
-UNET_FEATURES = [64, 128, 256, 512]  # features=[16, 32, 64, 128] con rete "piccola"
+UNET_FEATURES = [16, 32, 64, 128]  # features=[16, 32, 64, 128] con rete "piccola",   [64, 128, 256, 512] con rete "grande"
 # Configurazione del seed per la riproducibilità
 RANDOM_SEED = 43
 
