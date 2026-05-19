@@ -32,7 +32,7 @@ def train_one_epoch(
     optimizer: torch.optim.Optimizer,
     loss_fn: nn.Module,
     device: str = DEVICE,
-    scaler: torch.cuda.amp.GradScaler = None,
+    scaler: torch.cuda.amp.GradScaler = torch.cuda.amp.GradScaler("cuda"),
 ) -> Tuple[float, float, float, list]:
     """
     Esegue un'intera epoch di training: forward, backward e aggiornamento pesi.
@@ -73,7 +73,7 @@ def train_one_epoch(
 
         if scaler is not None and device == "cuda":
             # --- Automatic Mixed Precision (solo su GPU) ---
-            with torch.cuda.amp.autocast():
+            with torch.cuda.amp.autocast(device_type=device):
                 predictions = model(images)
                 loss = loss_fn(predictions, masks)
             scaler.scale(loss).backward()

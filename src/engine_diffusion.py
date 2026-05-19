@@ -32,7 +32,7 @@ def train_epoch_diffusion(model, dataloader, optimizer, scheduler, scaler, devic
         optimizer.zero_grad()
         
         # 3. Forward Pass del Modello sotto il context manager autocast (FP16)
-        with torch.cuda.amp.autocast():
+        with torch.cuda.amp.autocast(device_type=device):
             # Il modello prova a prevedere il rumore avendo l'immagine condizionale e la maschera rumorosa
             predicted_noise = model(noisy_masks, images, t)
             
@@ -68,7 +68,7 @@ def train_diffusion(
         os.makedirs(drive_save_dir, exist_ok=True)
         
     # Inizializzatore per Mixed Precision
-    scaler = torch.cuda.amp.GradScaler()
+    scaler = torch.cuda.amp.GradScaler(device_type=device)
     best_loss = float('inf')
     
     print(f"Inizio addestramento Diffusion su {device} per {num_epochs} epoche.")
