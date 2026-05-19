@@ -43,6 +43,35 @@ class DiffusionPipeline:
             noise = torch.randn_like(x)
             sigma_t = torch.sqrt(betas_t)
             return model_mean + sigma_t * noise
+    @torch.no_grad()
+    def ddim_sample(self, x, x_cond, t, t_prev):
+        """
+        Singolo step del Reverse Process usando DDIM (Deterministico).
+        Questa variante permette di saltare molti step intermedi accelerando l'inferenza.
+        """
+        b = x.shape[0]
+        # Estraiamo le alpha_cumprod per il timestep t e per il precedente t_prev
+        alpha_t = self.scheduler._extract(self.scheduler.alphas_cumprod, t, x.shape)
+        
+        # Gestiamo il caso dell'ultimo step in cui t_prev scende sotto 0 (immaginiamo alpha_prev = 1)
+        if t_prev[0].item() < 0:
+            alpha_prev = torch.ones_like(alpha_t)
+        else:
+            alpha_prev = self.scheduler._extract(self.scheduler.alphas_cumprod, t_prev, x.shape)
+            
+        # 1. La U-Net predice il rumore
+        predicted_noise = self.model(x, x_cond, t)
+        
+        # 2. Stimiamo l'immagine pulita x_0 sottraendo il rumore
+        pred_x0 = (x - torch.sqrt(1.0 - alpha_t) * predicted_noise) / torch.sqrt(alpha_t)
+        
+        # 3. Calcoliamo la direzione verso l'immagine al tempo t_prev
+        dir_xt = torch.sqrt(1.0 - alpha_prev) * predicted_noise
+        
+        # 4. Calcoliamo x al tempo t_prev senza aggiungere rumore aggiuntivo (sigma=0 in DDIM)
+        x_prev = torch.sqrt(alpha_prev) * pred_x0 + dir_xt
+        
+        return x_prev
 
     @torch.no_grad()
     def generate_mask(self, x_cond, use_ddim=False, ddim_steps=50):
@@ -53,17 +82,27 @@ class DiffusionPipeline:
         # Si parte da puro rumore gaussiano
         x = torch.randn((b, 1, h, w), device=self.device)
         
-        # Controllo della flag per il fast sampler, come concordato
+        # Controllo della flag per il fast sampler (DDIM)
         if use_ddim:
-            raise NotImplementedError(
-                "L'opzione DDIM è attivata ma l'implementazione è attualmente in pausa. "
-                "Disattiva `use_ddim=False` per usare il DDPM standard per ora."
-            )
+            # Creiamo la sequenza di step per DDIM (saltando gli intermedi)
+            step_ratio = self.scheduler.num_timesteps // ddim_steps
+            timesteps = torch.arange(0, ddim_steps) * step_ratio
+            timesteps = torch.flip(timesteps, dims=[0]) # Da t_max a 0
             
-        # Loop Standard DDPM (tipicamente 1000 step)
-        for i in tqdm(reversed(range(0, self.scheduler.num_timesteps)), desc="DDPM Sampling", total=self.scheduler.num_timesteps, leave=False):
-            t = torch.full((b,), i, device=self.device, dtype=torch.long)
-            x = self.p_sample(x, x_cond, t, i)
+            for i, step in enumerate(tqdm(timesteps, desc=f"DDIM Sampling ({ddim_steps} steps)", leave=False)):
+                step_val = step.item()
+                t = torch.full((b,), step_val, device=self.device, dtype=torch.long)
+                
+                # Calcoliamo il timestep precedente
+                prev_step_val = step_val - step_ratio if i < len(timesteps) - 1 else -1
+                t_prev = torch.full((b,), prev_step_val, device=self.device, dtype=torch.long)
+                
+                x = self.ddim_sample(x, x_cond, t, t_prev)
+        else:
+            # Loop Standard DDPM (tipicamente 1000 step)
+            for i in tqdm(reversed(range(0, self.scheduler.num_timesteps)), desc="DDPM Sampling", total=self.scheduler.num_timesteps, leave=False):
+                t = torch.full((b,), i, device=self.device, dtype=torch.long)
+                x = self.p_sample(x, x_cond, t, i)
             
         return x
 
