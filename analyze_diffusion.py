@@ -122,7 +122,7 @@ def main():
             image_tensor, 
             patch_size=256, # Stessa size usata nel training
             stride=128,     # Sovrapposizione del 50% per bordi morbidi
-            use_ddim=True
+            use_ddim=False
         )
         img_time = time.perf_counter() - img_start
         
