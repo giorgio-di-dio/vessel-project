@@ -26,8 +26,7 @@ class DiffusionScheduler:
         e ne fa il reshape in modo che possano essere moltiplicati con il tensore dell'immagine.
         """
         batch_size = t.shape[0]
-        out = a.gather(-1, t.cpu())
-        out = out.to(self.device)
+        out = a.to(t.device).gather(-1, t)
         # Reshape: [batch_size, 1, 1, 1] per permettere il broadcasting
         return out.reshape(batch_size, *((1,) * (len(x_shape) - 1)))
 
