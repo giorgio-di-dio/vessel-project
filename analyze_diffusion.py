@@ -69,7 +69,14 @@ def main():
         print(f"[ERRORE] Nessuna immagine trovata in: {test_img_dir}")
         return
 
-    print(f"\n  Immagini di test trovate: {len(image_paths)}")
+    # --- DEBUG/TEST VELOCE ---
+    # Limita il numero di immagini per non aspettare ore durante i test
+    MAX_IMAGES = 2
+    if len(image_paths) > MAX_IMAGES:
+        print(f"\n  [TEST MODE] Limito l'analisi alle prime {MAX_IMAGES} immagini (su {len(image_paths)} totali).")
+        image_paths = image_paths[:MAX_IMAGES]
+
+    print(f"\n  Immagini da processare: {len(image_paths)}")
     print(f"  Risultati salvati in: {RESULTS_DIR}\n")
 
     total_dice = 0.0
@@ -97,7 +104,7 @@ def main():
             image_tensor, 
             patch_size=256, # Stessa size usata nel training
             stride=128,     # Sovrapposizione del 50% per bordi morbidi
-            use_ddim=False
+            use_ddim=True
         )
         
         # Mettiamo in numpy array 2D per il plot
