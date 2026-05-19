@@ -12,7 +12,9 @@ Nota: Tutte le metriche operano su tensori binarizzati con soglia MASK_THRESHOLD
       I valori di input possono essere logits grezzi o probabilità (specificare from_logits).
 """
 
+import math
 import torch
+import torch.nn.functional as F
 from src.config import MASK_THRESHOLD
 
 
@@ -122,3 +124,79 @@ def pixel_accuracy(
         pred_binary = (predictions > threshold).float()
         correct     = (pred_binary == targets).float()
         return correct.mean().item()
+
+
+# ==============================================================================
+# DISTANZE E METRICHE DI BORDO
+# ==============================================================================
+
+def get_boundary(mask: torch.Tensor) -> torch.Tensor:
+    """
+    Estrae il bordo (contorno) di una maschera binaria.
+    Args:
+        mask: Tensor di forma (B, 1, H, W) con valori {0, 1}
+    Returns:
+        Tensor di forma (B, 1, H, W) con valori {0, 1} rappresentanti il bordo.
+    """
+    eroded = 1 - F.max_pool2d(1 - mask, kernel_size=3, stride=1, padding=1)
+    return mask - eroded
+
+def average_hausdorff_distance(
+    predictions: torch.Tensor,
+    targets: torch.Tensor,
+    threshold: float = MASK_THRESHOLD,
+    from_logits: bool = True,
+) -> float:
+    """
+    Calcola l'Average Hausdorff Distance (AHD) tra i bordi predetti e quelli reali.
+    
+    Formula: max( mean(min_dist(A, B)), mean(min_dist(B, A)) )
+    dove A e B sono gli insiemi di punti (coordinate) che appartengono al bordo.
+    
+    Args:
+        predictions : Logits o probabilità (B, 1, H, W).
+        targets     : Ground truth binarie (B, 1, H, W).
+        threshold   : Soglia per binarizzare le probabilità.
+        from_logits : Se True, applica sigmoid prima della sogliatura.
+        
+    Returns:
+        Average Hausdorff Distance media sul batch in pixel. Più è bassa, meglio è.
+    """
+    with torch.no_grad():
+        if from_logits:
+            predictions = torch.sigmoid(predictions)
+            
+        pred_bin = (predictions > threshold).float()
+        tgt_bin = targets.float()
+        
+        bound_pred = get_boundary(pred_bin)
+        bound_tgt = get_boundary(tgt_bin)
+        
+        B, _, H, W = pred_bin.shape
+        max_dist = math.sqrt(H**2 + W**2)  # Distanza massima possibile
+        
+        ahd_batch = []
+        for i in range(B):
+            pts_p = torch.nonzero(bound_pred[i, 0]).float()
+            pts_t = torch.nonzero(bound_tgt[i, 0]).float()
+            
+            if len(pts_p) == 0 and len(pts_t) == 0:
+                # Entrambe vuote: distanza 0
+                ahd_batch.append(0.0)
+            elif len(pts_p) == 0 or len(pts_t) == 0:
+                # Una vuota e l'altra no: distanza massima
+                ahd_batch.append(max_dist)
+            else:
+                # Calcola distanza euclidea a coppie
+                dists = torch.cdist(pts_p, pts_t)
+                
+                # Distanza media dal pred a tgt
+                d_p_t = dists.min(dim=1)[0].mean()
+                # Distanza media dal tgt a pred
+                d_t_p = dists.min(dim=0)[0].mean()
+                
+                # Prende il massimo delle medie (Hausdorff simmetrico)
+                ahd_batch.append(max(d_p_t, d_t_p).item())
+                
+        return sum(ahd_batch) / len(ahd_batch)
+

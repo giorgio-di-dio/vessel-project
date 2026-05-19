@@ -18,7 +18,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from src.metrics import dice_score, iou_score
+from src.metrics import dice_score, iou_score, average_hausdorff_distance
 from src.config import DEVICE
 
 
@@ -32,8 +32,8 @@ def train_one_epoch(
     optimizer: torch.optim.Optimizer,
     loss_fn: nn.Module,
     device: str = DEVICE,
-    scaler: torch.cuda.amp.GradScaler = torch.cuda.amp.GradScaler("cuda"),
-) -> Tuple[float, float, float, list]:
+    scaler: torch.cuda.amp.GradScaler = None,
+) -> Tuple[float, float, float, float, list]:
     """
     Esegue un'intera epoch di training: forward, backward e aggiornamento pesi.
 
@@ -52,13 +52,14 @@ def train_one_epoch(
         scaler    : GradScaler per AMP (None per disabilitare).
 
     Returns:
-        Tuple (avg_loss, avg_dice, avg_iou, batch_times) dove batch_times
+        Tuple (avg_loss, avg_dice, avg_iou, avg_ahd, batch_times) dove batch_times
         è la lista dei tempi (in secondi) di ogni singolo batch.
     """
     model.train()
     total_loss  = 0.0
     total_dice  = 0.0
     total_iou   = 0.0
+    total_ahd   = 0.0
     batch_times: list[float] = []
 
     loop = tqdm(loader, desc="  [Train]", leave=False, unit="batch")
@@ -92,15 +93,17 @@ def train_one_epoch(
         batch_loss = loss.item()
         batch_dice = dice_score(predictions.detach(), masks, from_logits=True)
         batch_iou  = iou_score(predictions.detach(), masks, from_logits=True)
+        batch_ahd  = average_hausdorff_distance(predictions.detach(), masks, from_logits=True)
 
         total_loss += batch_loss
         total_dice += batch_dice
         total_iou  += batch_iou
+        total_ahd  += batch_ahd
 
-        loop.set_postfix(loss=f"{batch_loss:.4f}", dice=f"{batch_dice:.4f}")
+        loop.set_postfix(loss=f"{batch_loss:.4f}", dice=f"{batch_dice:.4f}", ahd=f"{batch_ahd:.2f}")
 
     n = len(loader)
-    return total_loss / n, total_dice / n, total_iou / n, batch_times
+    return total_loss / n, total_dice / n, total_iou / n, total_ahd / n, batch_times
 
 
 # ==============================================================================
@@ -112,7 +115,7 @@ def validate(
     loader: DataLoader,
     loss_fn: nn.Module,
     device: str = DEVICE,
-) -> Tuple[float, float, float]:
+) -> Tuple[float, float, float, float]:
     """
     Valuta le performance del modello sul set di validazione senza aggiornare i pesi.
 
@@ -126,12 +129,13 @@ def validate(
         device  : 'cuda' o 'cpu'.
 
     Returns:
-        Tuple (avg_loss, avg_dice, avg_iou) medie sull'intero set di validazione.
+        Tuple (avg_loss, avg_dice, avg_iou, avg_ahd) medie sull'intero set di validazione.
     """
     model.eval()
     total_loss = 0.0
     total_dice = 0.0
     total_iou  = 0.0
+    total_ahd  = 0.0
 
     loop = tqdm(loader, desc="  [Val]  ", leave=False, unit="img")
 
@@ -146,9 +150,10 @@ def validate(
             total_loss += loss.item()
             total_dice += dice_score(predictions, masks, from_logits=True)
             total_iou  += iou_score(predictions, masks, from_logits=True)
+            total_ahd  += average_hausdorff_distance(predictions, masks, from_logits=True)
 
     n = len(loader)
-    return total_loss / n, total_dice / n, total_iou / n
+    return total_loss / n, total_dice / n, total_iou / n, total_ahd / n
 
 
 # ==============================================================================

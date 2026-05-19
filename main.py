@@ -123,10 +123,10 @@ def main():
 
         epoch_start = time.perf_counter()
 
-        train_loss, train_dice, train_iou, batch_times = train_one_epoch(
+        train_loss, train_dice, train_iou, train_ahd, batch_times = train_one_epoch(
             model, train_loader, optimizer, loss_fn, DEVICE, scaler
         )
-        val_loss, val_dice, val_iou = validate(
+        val_loss, val_dice, val_iou, val_ahd = validate(
             model, val_loader, loss_fn, DEVICE
         )
 
@@ -136,14 +136,14 @@ def main():
 
         # Logging a console
         print(
-            f"  Train -> Loss: {train_loss:.4f} | Dice: {train_dice:.4f} | IoU: {train_iou:.4f}\n"
-            f"  Val   -> Loss: {val_loss:.4f}   | Dice: {val_dice:.4f}   | IoU: {val_iou:.4f}"
+            f"  Train -> Loss: {train_loss:.4f} | Dice: {train_dice:.4f} | IoU: {train_iou:.4f} | AHD: {train_ahd:.2f}\n"
+            f"  Val   -> Loss: {val_loss:.4f}   | Dice: {val_dice:.4f}   | IoU: {val_iou:.4f}   | AHD: {val_ahd:.2f}"
         )
 
         # Logging su file
         logger.log_epoch(
-            epoch, train_loss, train_dice, train_iou,
-            val_loss, val_dice, val_iou,
+            epoch, train_loss, train_dice, train_iou, train_ahd,
+            val_loss, val_dice, val_iou, val_ahd,
             epoch_time, batch_times,
         )
 

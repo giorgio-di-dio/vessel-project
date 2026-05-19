@@ -41,7 +41,9 @@ class DiceLoss(nn.Module):
         divisione per zero e stabilizza il gradiente.
 
     Args:
-        smooth  : Termine di smoothing per evitare divisione per zero (Laplace smoothing).
+        smooth  : Termine di smoothing per evitare divisione per zero (Laplace smoothing). 
+        Corregge il denominatore: Dice = (2 * Intersezione + smooth) / (Somma predetti + Somma reali + smooth). 
+        In questo modo quando sia GT che la predizione sono zero, la loss vale 1. 
         from_logits : Se True, applica sigmoid all'input prima del calcolo.
     """
 

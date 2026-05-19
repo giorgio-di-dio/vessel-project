@@ -38,8 +38,8 @@ class RunLogger:
     # Intestazione del CSV
     _CSV_HEADER = [
         "epoch",
-        "train_loss", "train_dice", "train_iou",
-        "val_loss",   "val_dice",   "val_iou",
+        "train_loss", "train_dice", "train_iou", "train_ahd",
+        "val_loss",   "val_dice",   "val_iou",   "val_ahd",
         "epoch_time_s",
         "batch_mean_s", "batch_std_s",
     ]
@@ -101,9 +101,11 @@ class RunLogger:
         train_loss:    float,
         train_dice:    float,
         train_iou:     float,
+        train_ahd:     float,
         val_loss:      float,
         val_dice:      float,
         val_iou:       float,
+        val_ahd:       float,
         epoch_time_s:  float,
         batch_times:   list[float],
     ) -> None:
@@ -125,9 +127,11 @@ class RunLogger:
             "train_loss":    round(train_loss, 6),
             "train_dice":    round(train_dice, 6),
             "train_iou":     round(train_iou,  6),
+            "train_ahd":     round(train_ahd,  6),
             "val_loss":      round(val_loss,   6),
             "val_dice":      round(val_dice,   6),
             "val_iou":       round(val_iou,    6),
+            "val_ahd":       round(val_ahd,    6),
             "epoch_time_s":  round(epoch_time_s, 2),
             "batch_mean_s":  round(batch_mean,   4),
             "batch_std_s":   round(batch_std,    4),
@@ -217,7 +221,7 @@ class RunLogger:
             f"  Scheduler       : ReduceLROnPlateau "
             f"(patience={hp.get('scheduler_patience', 'N/A')}, "
             f"factor={hp.get('scheduler_factor', 'N/A')})",
-            f"random seed     : {hp.get('random_seed', 'N/A')}",
+            f"  Random seed     : {hp.get('random_seed', 'N/A')}",
             "",
             DASH,
             "  BATCH TIMING (train, media su tutte le epoch)",
