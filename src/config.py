@@ -41,17 +41,14 @@ IMAGE_WIDTH = 2048
 CHANNELS = 3  # RGB
 
 # Iperparametri di training
-PATCH_SIZE = 256       # Patch size per il training (deve essere multiplo di 32)
+PATCH_SIZE = 256       # Patch size per il training (deve essere multiplo di 32) (256 con rete "piccola")
 BATCH_SIZE = 8
 EPOCHS = 50
 LEARNING_RATE = 1e-4
-NUM_WORKERS = 0        # 0 = sincrono (più stabile su Windows; aumentare su Linux/Mac)
-
-# Soglia di confidenza per binarizzare le probabilità della maschera predetta
-MASK_THRESHOLD = 0.5
-
+NUM_WORKERS = 2        # 0 = sincrono (più stabile su Windows; aumentare su Linux/Mac)
+UNET_FEATURES = [16, 32, 64, 128]  # features=[16, 32, 64, 128] con rete "piccola",   [64, 128, 256, 512] con rete "grande"
 # Configurazione del seed per la riproducibilità
-RANDOM_SEED = 42
+RANDOM_SEED = 43
 
 # ==============================================================================
 # 3. CONFIGURAZIONE HARDWARE (DEVICE)
@@ -64,6 +61,9 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 # ==============================================================================
 # ?? Percorso in cui salvare i pesi del modello con le performance migliori
 BEST_MODEL_PATH = MODELS_DIR / "best_unet_vessel.pth"
+
+# Soglia di confidenza per binarizzare le probabilità della maschera predetta
+MASK_THRESHOLD = 0.5
 
 
 def create_directories():
@@ -81,12 +81,12 @@ def create_directories():
         print(f"[Config] Verificata/Creata directory: {d}")
 
 if __name__ == "__main__":
-    # Stampa a video la configurazione di base
+    # ?? Test di verifica rapida della configurazione
     print("=== VESSEL SEGMENTATION CONFIGURATION ===")
     print(f"Base Directory: {BASE_DIR}")
     print(f"Hardware Device: {DEVICE.upper()}")
     create_directories()
     
-    # Verifica e ottieni il path di Kagglehub
+    # ?? Verifica e ottieni il path di Kagglehub
     dataset_path = get_kaggle_dataset_path()
     print(f"Path to dataset files: {dataset_path}")

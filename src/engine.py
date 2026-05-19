@@ -9,6 +9,7 @@ Contiene:
     - save_checkpoint() : Salva i pesi del modello con le performance migliori.
 """
 
+import time
 from pathlib import Path
 from typing import Tuple
 
@@ -32,7 +33,7 @@ def train_one_epoch(
     loss_fn: nn.Module,
     device: str = DEVICE,
     scaler: torch.cuda.amp.GradScaler = None,
-) -> Tuple[float, float, float]:
+) -> Tuple[float, float, float, list]:
     """
     Esegue un'intera epoch di training: forward, backward e aggiornamento pesi.
 
@@ -51,12 +52,14 @@ def train_one_epoch(
         scaler    : GradScaler per AMP (None per disabilitare).
 
     Returns:
-        Tuple (avg_loss, avg_dice, avg_iou) medie sull'intera epoch.
+        Tuple (avg_loss, avg_dice, avg_iou, batch_times) dove batch_times
+        è la lista dei tempi (in secondi) di ogni singolo batch.
     """
     model.train()
-    total_loss = 0.0
-    total_dice = 0.0
-    total_iou  = 0.0
+    total_loss  = 0.0
+    total_dice  = 0.0
+    total_iou   = 0.0
+    batch_times: list[float] = []
 
     loop = tqdm(loader, desc="  [Train]", leave=False, unit="batch")
 
@@ -65,6 +68,8 @@ def train_one_epoch(
         masks  = masks.to(device)
 
         optimizer.zero_grad()
+
+        t0 = time.perf_counter()
 
         if scaler is not None and device == "cuda":
             # --- Automatic Mixed Precision (solo su GPU) ---
@@ -81,6 +86,8 @@ def train_one_epoch(
             loss.backward()
             optimizer.step()
 
+        batch_times.append(time.perf_counter() - t0)
+
         # Calcolo metriche per il logging (detach dalla computational graph)
         batch_loss = loss.item()
         batch_dice = dice_score(predictions.detach(), masks, from_logits=True)
@@ -93,7 +100,7 @@ def train_one_epoch(
         loop.set_postfix(loss=f"{batch_loss:.4f}", dice=f"{batch_dice:.4f}")
 
     n = len(loader)
-    return total_loss / n, total_dice / n, total_iou / n
+    return total_loss / n, total_dice / n, total_iou / n, batch_times
 
 
 # ==============================================================================
