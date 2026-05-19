@@ -84,7 +84,7 @@ def main():
 
     # --- LOGGER ---
     logger = DiffusionLogger(
-        log_dir=OUTPUT_DIR / "logs_diffusion",
+        log_dir=Path("output/logs_diffusion"),
         hparams={
             "patch_size": 256,
             "stride": 128,
