@@ -181,10 +181,12 @@ class VesselDataset(Dataset):
             mask  = cv2.flip(mask, 0)
 
         # Rotazione multipla di 90°
+        """ non usarla per il momento, ma nel futuro potremmo usarla 
         if random.random() > 0.5:
             k = random.choice([1, 2, 3])  # 90°, 180°, 270°
             image = np.rot90(image, k).copy()
             mask  = np.rot90(mask, k).copy()
+        """
 
         return image, mask
 
