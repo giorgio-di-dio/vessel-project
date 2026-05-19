@@ -81,7 +81,7 @@ class VesselDataset(Dataset):
             [p for p in self.image_dir.iterdir() if p.suffix.lower() in extensions]
         )
 
-        # Filtra solo le immagini per cui esiste la corrispondente maschera
+        # Controlla per tutte le immagini se esiste la corrispondente maschera
         self.valid_pairs: List[Tuple[Path, Path]] = []
         missing = 0
         for img_path in self.image_paths:
