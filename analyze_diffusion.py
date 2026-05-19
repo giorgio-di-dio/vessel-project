@@ -9,6 +9,7 @@ Esecuzione:
     python analyze_diffusion.py
 """
 
+import time
 from pathlib import Path
 import numpy as np
 import cv2
@@ -20,6 +21,7 @@ from tqdm import tqdm
 from src.config import (
     DEVICE,
     RESULTS_DIR,
+    OUTPUT_DIR,
     create_directories,
     get_kaggle_dataset_path,
 )
@@ -27,6 +29,7 @@ from src.metrics import dice_score, iou_score
 from src.models.diffusion_scheduler import DiffusionScheduler
 from src.models.diffusion_unet import ConditionalUNet
 from src.models.diffusion_inference import DiffusionPipeline
+from src.diffusion_logger import DiffusionLogger
 
 # Importiamo la funzione di salvataggio dal tuo analizzatore standard!
 from analyze import save_comparison_figure
@@ -79,6 +82,20 @@ def main():
     print(f"\n  Immagini da processare: {len(image_paths)}")
     print(f"  Risultati salvati in: {RESULTS_DIR}\n")
 
+    # --- LOGGER ---
+    logger = DiffusionLogger(
+        log_dir=OUTPUT_DIR / "logs_diffusion",
+        hparams={
+            "patch_size": 256,
+            "stride": 128,
+            "num_timesteps": 1000,
+            "base_dim": 32,
+            "use_ddim": True,
+            "device": DEVICE,
+        }
+    )
+    logger.start()
+
     total_dice = 0.0
     total_iou  = 0.0
     processed  = 0
@@ -99,6 +116,7 @@ def main():
         image_tensor = torch.from_numpy(image_tensor).unsqueeze(0).to(DEVICE)
 
         # --- INFERENZA DIFFUSION ---
+        img_start = time.perf_counter()
         # L'algoritmo di stitching gestirà automaticamente le patch e le ricucirà
         pred_tensor = pipeline.infer_full_image(
             image_tensor, 
@@ -106,6 +124,7 @@ def main():
             stride=128,     # Sovrapposizione del 50% per bordi morbidi
             use_ddim=True
         )
+        img_time = time.perf_counter() - img_start
         
         # Mettiamo in numpy array 2D per il plot
         pred_map = pred_tensor.squeeze().cpu().numpy()
@@ -120,6 +139,13 @@ def main():
         total_iou  += img_iou
         processed  += 1
 
+        logger.log_image(
+            image_name=img_path.name,
+            dice=img_dice,
+            iou=img_iou,
+            inference_time_s=img_time
+        )
+
         # Salvataggio figura comparativa riutilizzando il tuo metodo esistente
         out_path = RESULTS_DIR / f"diff_result_{img_path.stem}.png"
         save_comparison_figure(image_rgb, gt_mask, pred_map, out_path)
@@ -127,6 +153,9 @@ def main():
     if processed > 0:
         avg_dice = total_dice / processed
         avg_iou  = total_iou  / processed
+
+        logger.finish(avg_dice, avg_iou)
+
         print(f"\n{'=' * 60}")
         print(f"  RISULTATI FINALI DIFFUSION ({processed} immagini di test)")
         print(f"{'=' * 60}")
