@@ -113,8 +113,8 @@ def main():
         # Calcolo metriche per questa immagine
         gt_tensor = torch.from_numpy((gt_mask > 127).astype(np.float32)).unsqueeze(0).unsqueeze(0).to(DEVICE)
 
-        img_dice = dice_score(pred_tensor, gt_tensor, from_logits=False).item()
-        img_iou  = iou_score(pred_tensor, gt_tensor, from_logits=False).item()
+        img_dice = dice_score(pred_tensor, gt_tensor, from_logits=False)
+        img_iou  = iou_score(pred_tensor, gt_tensor, from_logits=False)
 
         total_dice += img_dice
         total_iou  += img_iou
