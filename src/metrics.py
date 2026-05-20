@@ -173,18 +173,19 @@ def average_hausdorff_distance(
         bound_tgt = get_boundary(tgt_bin)
         
         B, _, H, W = pred_bin.shape
-        max_dist = math.sqrt(H**2 + W**2)  # Distanza massima possibile
+        max_dist = math.sqrt(H**2 + W**2)  # Distanza massima possibile (diagonale)
         
         ahd_batch = []
+        #Creiamo le liste delle coordinate dei bordi
         for i in range(B):
             pts_p = torch.nonzero(bound_pred[i, 0]).float()
             pts_t = torch.nonzero(bound_tgt[i, 0]).float()
             
             if len(pts_p) == 0 and len(pts_t) == 0:
-                # Entrambe vuote: distanza 0
+                # Entrambe vuote: distanza 0 (caso limite 1)
                 ahd_batch.append(0.0)
             elif len(pts_p) == 0 or len(pts_t) == 0:
-                # Una vuota e l'altra no: distanza massima
+                # Una vuota e l'altra no: distanza massima (caso limite 2)
                 ahd_batch.append(max_dist)
             else:
                 # Calcola distanza euclidea a coppie
