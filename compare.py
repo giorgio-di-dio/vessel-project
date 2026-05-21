@@ -97,7 +97,7 @@ def main():
     # --- INFERENZA CNN (Sliding Window su Immagine Originale) ---
     print("Avvio inferenza CNN (Sliding Window)...")
     pred_map_unet = sliding_window_inference(
-        unet_model, image_rgb, patch_size=PATCH_SIZE, stride=256, device=DEVICE
+        unet_model, image_rgb, patch_size=PATCH_SIZE, stride=384, device=DEVICE
     )
 
     # --- INFERENZA DIFFUSION (su Immagine Resized) ---
