@@ -1,9 +1,16 @@
+#File per vedere se va il setup e se sono dentro al venv
+
 import torch
-import segmentation_models_pytorch as smp
+import sys
+import os
+
+
+print("-" * 30)
+if ".venv" in sys.executable:
+    print("STAI USANDO IL VENV! :)")
+else:
+    print("STAI USANDO IL PYTHON GLOBALE! :(")
 
 print(f"Versione PyTorch: {torch.__version__}")
 print(f"GPU disponibile: {torch.cuda.is_available()}")
-
-# Prova a inizializzare una U-Net al volo
-model = smp.Unet(encoder_name="resnet34", classes=1)
-print("Modello U-Net creato con successo!")
+print("-" * 30)

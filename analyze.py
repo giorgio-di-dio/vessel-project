@@ -48,7 +48,7 @@ def sliding_window_inference(
     model: torch.nn.Module,
     image_rgb: np.ndarray,
     patch_size: int = PATCH_SIZE,
-    stride: int = 384,
+    stride: int = 256,
     device: str = DEVICE,
 ) -> np.ndarray:
     """

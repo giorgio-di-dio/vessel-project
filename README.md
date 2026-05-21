@@ -20,7 +20,7 @@ vessel-project/
 │   ├── config.py             ✅ Configurazione globale (path, iperparametri, Kaggle API)
 │   ├── dataset.py            ✅ VesselDataset + get_dataloaders() con patch-based sampling
 │   ├── losses.py             ✅ DiceLoss + CombinedLoss (BCE + Dice)
-│   ├── metrics.py            ✅ dice_score(), iou_score(), pixel_accuracy()
+│   ├── metrics.py            ✅ dice_score(), iou_score(), pixel_accuracy(), average_hausdorff_distance()
 │   ├── engine.py             ✅ train_one_epoch(), validate(), save/load_checkpoint()
 │   └── models/
 │       ├── __init__.py       ✅ Package Python
@@ -111,6 +111,7 @@ Scelte implementative:
 | `dice_score` | `2·TP / (2·TP + FP + FN)` | Metrica principale di segmentazione |
 | `iou_score` | `TP / (TP + FP + FN)` | Valutazione più conservativa |
 | `pixel_accuracy` | `(TP+TN) / Totale` | Indicativa (soffre del class imbalance) |
+| `average_hausdorff_distance` | `max(mean_min(A,B), mean_min(B,A))` | Distanza media tra i bordi predetti e reali (AHD) |
 
 ---
 
