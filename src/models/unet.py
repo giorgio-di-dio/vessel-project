@@ -164,12 +164,12 @@ class UNet(nn.Module):
 
         # --- ENCODER ---
         self.input_conv = DoubleConv(in_channels, features[0])
-        self.enc1 = EncoderBlock(features[0], features[1])
-        self.enc2 = EncoderBlock(features[1], features[2])
-        self.enc3 = EncoderBlock(features[2], features[3])
+        self.enc1 = EncoderBlock(features[0], features[1]) # 64 -> 128
+        self.enc2 = EncoderBlock(features[1], features[2]) # 128 -> 256
+        self.enc3 = EncoderBlock(features[2], features[3]) # 256 -> 512
 
         # --- BOTTLENECK ---
-        self.bottleneck = EncoderBlock(features[3], features[3] * 2)
+        self.bottleneck = EncoderBlock(features[3], features[3] * 2) # 512 -> 1024
 
         # --- DECODER ---
         # Dopo l'upsample, i canali del decoder vengono concatenati con i canali
