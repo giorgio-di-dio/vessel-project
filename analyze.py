@@ -140,7 +140,7 @@ def save_comparison_figure(
     fig, axes = plt.subplots(1, 3, figsize=(18, 6))
     fig.patch.set_facecolor("#1a1a2e")
 
-    titles = ["Immagine Originale", "Ground Truth", "Predizione U-Net"]
+    titles = ["Immagine Originale", "Ground Truth", "Predizione CNN"]
     images = [image_rgb, gt_binary, pred_binary]
     cmaps  = [None, "gray", "gray"]
 
@@ -185,7 +185,9 @@ def main():
     if not image_paths:
         print(f"[ERRORE] Nessuna immagine trovata in: {test_img_dir}")
         return
-
+    k=1
+    print(f"  Fino a qui tutto bene {k}")
+    k+=1
     print(f"\n  Immagini di test trovate: {len(image_paths)}")
     print(f"  Risultati salvati in: {RESULTS_DIR}\n")
 
@@ -193,6 +195,9 @@ def main():
     iou_list = []
     hausdorff_list = []
     image_names = []
+
+    print(f"  Fino a qui tutto bene {k}")
+    k+=1
 
     for img_path in tqdm(image_paths, desc="  Inference", unit="img"):
         mask_path = test_mask_dir / img_path.name
@@ -209,22 +214,37 @@ def main():
             model, image_rgb, patch_size=PATCH_SIZE, stride=384, device=DEVICE
         )
 
+        print(f"  Fino a qui tutto bene {k}")
+        k+=1
+    
         # Calcolo metriche per questa immagine
         pred_tensor = torch.from_numpy(pred_map).unsqueeze(0).unsqueeze(0)
         gt_tensor   = torch.from_numpy((gt_mask > 127).astype(np.float32)).unsqueeze(0).unsqueeze(0)
 
+        print(f"  Fino a qui tutto bene {k}")
+        k+=1
+
         img_dice = dice_score(pred_tensor, gt_tensor, from_logits=False)
         img_iou  = iou_score(pred_tensor, gt_tensor, from_logits=False)
         img_hd   = average_hausdorff_distance(pred_tensor, gt_tensor, from_logits=False)
+
+        print(f"  Fino a qui tutto bene {k}")
+        k+=1
 
         dice_list.append(img_dice)
         iou_list.append(img_iou)
         hausdorff_list.append(img_hd)
         image_names.append(img_path.name)
 
+        print(f"  Fino a qui tutto bene {k}")
+        k+=1
+
         # Salvataggio figura comparativa
         out_path = RESULTS_DIR / f"result_{img_path.stem}.png"
         save_comparison_figure(image_rgb, gt_mask, pred_map, out_path)
+
+        print(f"  Fino a qui tutto bene {k}")
+        k+=1
 
     if len(image_names) > 0:
         mean_dice = np.mean(dice_list)
@@ -234,6 +254,9 @@ def main():
         mean_hd = np.mean(hausdorff_list)
         std_hd = np.std(hausdorff_list)
 
+        print(f"  Fino a qui tutto bene {k}")
+        k+=1
+
         # Creazione del DataFrame per salvare i risultati
         df_metrics = pd.DataFrame({
             "Image": image_names,
@@ -242,13 +265,22 @@ def main():
             "Hausdorff": hausdorff_list
         })
         
+        print(f"  Fino a qui tutto bene {k}")
+        k+=1 
+        
         # Aggiunta delle righe per le metriche medie ed errore (deviazione standard)
         df_metrics.loc[len(df_metrics)] = ["AVERAGE", mean_dice, mean_iou, mean_hd]
         df_metrics.loc[len(df_metrics)] = ["STD_DEV", std_dice, std_iou, std_hd]
 
+        print(f"  Fino a qui tutto bene {k}")
+        k+=1 
+
         # Salvataggio in CSV
-        #csv_path = RESULTS_DIR / "metrics_results.csv"
-        #df_metrics.to_csv(csv_path, index=False)
+        csv_path = RESULTS_DIR / "metrics_results.csv"
+        df_metrics.to_csv(csv_path, index=False)
+
+        print(f"  Fino a qui tutto bene {k}")
+        k+=1 
 
         print(f"\n{'=' * 60}")
         print(f"  RISULTATI FINALI ({len(image_names)} immagini di test)")
