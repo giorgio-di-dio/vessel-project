@@ -247,8 +247,8 @@ def main():
         df_metrics.loc[len(df_metrics)] = ["STD_DEV", std_dice, std_iou, std_hd]
 
         # Salvataggio in CSV
-        csv_path = RESULTS_DIR / "metrics_results.csv"
-        df_metrics.to_csv(csv_path, index=False)
+        #csv_path = RESULTS_DIR / "metrics_results.csv"
+        #df_metrics.to_csv(csv_path, index=False)
 
         print(f"\n{'=' * 60}")
         print(f"  RISULTATI FINALI ({len(image_names)} immagini di test)")
