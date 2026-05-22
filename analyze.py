@@ -37,7 +37,8 @@ from src.config import (
 )
 from src.models.unet import UNet
 from src.engine import load_checkpoint
-from src.metrics import dice_score, iou_score
+import pandas as pd
+from src.metrics import dice_score, iou_score, average_hausdorff_distance
 
 
 # ==============================================================================
@@ -188,9 +189,10 @@ def main():
     print(f"\n  Immagini di test trovate: {len(image_paths)}")
     print(f"  Risultati salvati in: {RESULTS_DIR}\n")
 
-    total_dice = 0.0
-    total_iou  = 0.0
-    processed  = 0
+    dice_list = []
+    iou_list = []
+    hausdorff_list = []
+    image_names = []
 
     for img_path in tqdm(image_paths, desc="  Inference", unit="img"):
         mask_path = test_mask_dir / img_path.name
@@ -213,23 +215,49 @@ def main():
 
         img_dice = dice_score(pred_tensor, gt_tensor, from_logits=False)
         img_iou  = iou_score(pred_tensor, gt_tensor, from_logits=False)
+        img_hd   = average_hausdorff_distance(pred_tensor, gt_tensor, from_logits=False)
 
-        total_dice += img_dice
-        total_iou  += img_iou
-        processed  += 1
+        dice_list.append(img_dice)
+        iou_list.append(img_iou)
+        hausdorff_list.append(img_hd)
+        image_names.append(img_path.name)
 
         # Salvataggio figura comparativa
         out_path = RESULTS_DIR / f"result_{img_path.stem}.png"
         save_comparison_figure(image_rgb, gt_mask, pred_map, out_path)
 
-    if processed > 0:
-        avg_dice = total_dice / processed
-        avg_iou  = total_iou  / processed
+    if len(image_names) > 0:
+        mean_dice = np.mean(dice_list)
+        std_dice = np.std(dice_list)
+        mean_iou = np.mean(iou_list)
+        std_iou = np.std(iou_list)
+        mean_hd = np.mean(hausdorff_list)
+        std_hd = np.std(hausdorff_list)
+
+        # Creazione del DataFrame per salvare i risultati
+        df_metrics = pd.DataFrame({
+            "Image": image_names,
+            "Dice": dice_list,
+            "IoU": iou_list,
+            "Hausdorff": hausdorff_list
+        })
+        
+        # Aggiunta delle righe per le metriche medie ed errore (deviazione standard)
+        df_metrics.loc[len(df_metrics)] = ["AVERAGE", mean_dice, mean_iou, mean_hd]
+        df_metrics.loc[len(df_metrics)] = ["STD_DEV", std_dice, std_iou, std_hd]
+
+        # Salvataggio in CSV
+        csv_path = RESULTS_DIR / "metrics_results.csv"
+        df_metrics.to_csv(csv_path, index=False)
+
         print(f"\n{'=' * 60}")
-        print(f"  RISULTATI FINALI ({processed} immagini di test)")
+        print(f"  RISULTATI FINALI ({len(image_names)} immagini di test)")
         print(f"{'=' * 60}")
-        print(f"  Dice Score medio : {avg_dice:.4f}")
-        print(f"  IoU medio        : {avg_iou:.4f}")
+        print(f"  Dice Score       : {mean_dice:.4f} ± {std_dice:.4f}")
+        print(f"  IoU              : {mean_iou:.4f} ± {std_iou:.4f}")
+        print(f"  Hausdorff Dist   : {mean_hd:.4f} ± {std_hd:.4f}")
+        print(f"{'=' * 60}")
+        print(f"  Le metriche dettagliate sono state salvate in: {csv_path}")
         print(f"{'=' * 60}")
     else:
         print("[ATTENZIONE] Nessuna immagine processata.")
