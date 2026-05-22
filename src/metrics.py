@@ -141,6 +141,9 @@ def get_boundary(mask: torch.Tensor) -> torch.Tensor:
     eroded = 1 - F.max_pool2d(1 - mask, kernel_size=3, stride=1, padding=1)
     return mask - eroded
 
+import numpy as np
+from scipy.ndimage import distance_transform_edt
+
 def average_hausdorff_distance(
     predictions: torch.Tensor,
     targets: torch.Tensor,
@@ -150,8 +153,10 @@ def average_hausdorff_distance(
     """
     Calcola l'Average Hausdorff Distance (AHD) tra i bordi predetti e quelli reali.
     
+    Usa la Trasformata di Distanza (EDT) per evitare di allocare matrici
+    di distanze NxM che saturerebbero la memoria RAM (OOM) su immagini 2048x2048.
+    
     Formula: max( mean(min_dist(A, B)), mean(min_dist(B, A)) )
-    dove A e B sono gli insiemi di punti (coordinate) che appartengono al bordo.
     
     Args:
         predictions : Logits o probabilità (B, 1, H, W).
@@ -175,29 +180,31 @@ def average_hausdorff_distance(
         B, _, H, W = pred_bin.shape
         max_dist = math.sqrt(H**2 + W**2)  # Distanza massima possibile (diagonale)
         
+        bound_pred_np = bound_pred.cpu().numpy()
+        bound_tgt_np = bound_tgt.cpu().numpy()
+        
         ahd_batch = []
-        #Creiamo le liste delle coordinate dei bordi
+        
         for i in range(B):
-            pts_p = torch.nonzero(bound_pred[i, 0]).float()
-            pts_t = torch.nonzero(bound_tgt[i, 0]).float()
+            bp = bound_pred_np[i, 0]
+            bt = bound_tgt_np[i, 0]
             
-            if len(pts_p) == 0 and len(pts_t) == 0:
-                # Entrambe vuote: distanza 0 (caso limite 1)
+            if bp.sum() == 0 and bt.sum() == 0:
                 ahd_batch.append(0.0)
-            elif len(pts_p) == 0 or len(pts_t) == 0:
-                # Una vuota e l'altra no: distanza massima (caso limite 2)
+            elif bp.sum() == 0 or bt.sum() == 0:
                 ahd_batch.append(max_dist)
             else:
-                # Calcola distanza euclidea a coppie
-                dists = torch.cdist(pts_p, pts_t)
+                # edt accetta un array con 0 sui target e 1 altrove.
+                # bp e bt hanno 1 sul bordo e 0 altrove, quindi facciamo 1 - array
+                edt_p = distance_transform_edt(1 - bp)
+                edt_t = distance_transform_edt(1 - bt)
                 
-                # Distanza media dal pred a tgt
-                d_p_t = dists.min(dim=1)[0].mean()
-                # Distanza media dal tgt a pred
-                d_t_p = dists.min(dim=0)[0].mean()
+                # Distanza media dai punti predetti ai ground truth
+                d_p_t = edt_t[bp == 1].mean()
+                # Distanza media dai punti ground truth ai predetti
+                d_t_p = edt_p[bt == 1].mean()
                 
-                # Prende il massimo delle medie (Hausdorff simmetrico)
-                ahd_batch.append(max(d_p_t, d_t_p).item())
+                ahd_batch.append(max(d_p_t, d_t_p))
                 
-        return sum(ahd_batch) / len(ahd_batch)
+        return float(np.mean(ahd_batch))
 
