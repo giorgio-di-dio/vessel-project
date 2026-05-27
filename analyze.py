@@ -198,7 +198,7 @@ def main():
     iou_list = []
     hausdorff_list = []
     image_names = []
-
+    i=0
     for img_path in tqdm(image_paths, desc="  Inference", unit="img"):
         if i<200:
             mask_path = test_mask_dir / img_path.name
