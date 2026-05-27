@@ -178,15 +178,20 @@ def main():
 
     # --- Percorsi del set di test ---
     dataset_root  = get_kaggle_dataset_path()
-    test_img_dir  = dataset_root / "test" / "Original"
-    test_mask_dir = dataset_root / "test" / "Ground truth"
+    test_img_dir  = dataset_root / "train" / "Original"
+    test_mask_dir = dataset_root / "train" / "Ground truth"
+    
+    # test_img_dir  = dataset_root / "test" / "Original"
+    # test_mask_dir = dataset_root / "test" / "Ground truth"
 
     image_paths = sorted(test_img_dir.glob("*.png"))
     if not image_paths:
         print(f"[ERRORE] Nessuna immagine trovata in: {test_img_dir}")
         return
 
-    print(f"\n  Immagini di test trovate: {len(image_paths)}")
+    # print(f"\n  Immagini di test trovate: {len(image_paths)}")
+    print(f"\n  Immagini trovate: {len(image_paths)}")
+
     print(f"  Risultati salvati in: {RESULTS_DIR}\n")
 
     dice_list = []
@@ -195,36 +200,38 @@ def main():
     image_names = []
 
     for img_path in tqdm(image_paths, desc="  Inference", unit="img"):
-        mask_path = test_mask_dir / img_path.name
-        if not mask_path.exists():
-            continue
+        if i<200:
+            mask_path = test_mask_dir / img_path.name
+            if not mask_path.exists():
+                continue
 
-        # Caricamento immagine e maschera
-        image_bgr = cv2.imread(str(img_path), cv2.IMREAD_COLOR)
-        image_rgb = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2RGB)
-        gt_mask   = cv2.imread(str(mask_path), cv2.IMREAD_GRAYSCALE)
+            # Caricamento immagine e maschera
+            image_bgr = cv2.imread(str(img_path), cv2.IMREAD_COLOR)
+            image_rgb = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2RGB)
+            gt_mask   = cv2.imread(str(mask_path), cv2.IMREAD_GRAYSCALE)
 
-        # Inferenza con sliding window
-        pred_map = sliding_window_inference(
-            model, image_rgb, patch_size=PATCH_SIZE, stride=384, device=DEVICE
-        )
-    
-        # Calcolo metriche per questa immagine
-        pred_tensor = torch.from_numpy(pred_map).unsqueeze(0).unsqueeze(0)
-        gt_tensor   = torch.from_numpy((gt_mask > 127).astype(np.float32)).unsqueeze(0).unsqueeze(0)
+            # Inferenza con sliding window
+            pred_map = sliding_window_inference(
+                model, image_rgb, patch_size=PATCH_SIZE, stride=384, device=DEVICE
+            )
+        
+            # Calcolo metriche per questa immagine
+            pred_tensor = torch.from_numpy(pred_map).unsqueeze(0).unsqueeze(0)
+            gt_tensor   = torch.from_numpy((gt_mask > 127).astype(np.float32)).unsqueeze(0).unsqueeze(0)
 
-        img_dice = dice_score(pred_tensor, gt_tensor, from_logits=False)
-        img_iou  = iou_score(pred_tensor, gt_tensor, from_logits=False)
-        img_hd   = average_hausdorff_distance(pred_tensor, gt_tensor, from_logits=False)
+            img_dice = dice_score(pred_tensor, gt_tensor, from_logits=False)
+            img_iou  = iou_score(pred_tensor, gt_tensor, from_logits=False)
+            img_hd   = average_hausdorff_distance(pred_tensor, gt_tensor, from_logits=False)
 
-        dice_list.append(img_dice)
-        iou_list.append(img_iou)
-        hausdorff_list.append(img_hd)
-        image_names.append(img_path.name)
+            dice_list.append(img_dice)
+            iou_list.append(img_iou)
+            hausdorff_list.append(img_hd)
+            image_names.append(img_path.name)
 
-        # Salvataggio figura comparativa
-        out_path = RESULTS_DIR / f"result_{img_path.stem}.png"
-        save_comparison_figure(image_rgb, gt_mask, pred_map, out_path)
+            # Salvataggio figura comparativa
+            out_path = RESULTS_DIR / f"result_{img_path.stem}.png"
+            save_comparison_figure(image_rgb, gt_mask, pred_map, out_path)
+            i+=1
 
     if len(image_names) > 0:
         mean_dice = np.mean(dice_list)
