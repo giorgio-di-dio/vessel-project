@@ -178,8 +178,8 @@ def main():
 
     # --- Percorsi del set di test ---
     dataset_root  = get_kaggle_dataset_path()
-    test_img_dir  = dataset_root / "train" / "Original"
-    test_mask_dir = dataset_root / "train" / "Ground truth"
+    test_img_dir  = dataset_root / "test" / "Original"
+    test_mask_dir = dataset_root / "test" / "Ground truth"
     
     # test_img_dir  = dataset_root / "test" / "Original"
     # test_mask_dir = dataset_root / "test" / "Ground truth"
@@ -189,8 +189,7 @@ def main():
         print(f"[ERRORE] Nessuna immagine trovata in: {test_img_dir}")
         return
 
-    # print(f"\n  Immagini di test trovate: {len(image_paths)}")
-    print(f"\n  Immagini trovate: {len(image_paths)}")
+    print(f"\n  Immagini di test trovate: {len(image_paths)}")
 
     print(f"  Risultati salvati in: {RESULTS_DIR}\n")
 
